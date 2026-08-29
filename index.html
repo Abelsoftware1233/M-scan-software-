@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MalScan — heuristic file analysis</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-icon">🛡</div>
+        <div>
+          <h1>MalScan</h1>
+          <p class="subtitle">heuristic file analysis dashboard</p>
+        </div>
+      </div>
+      <div class="status">
+        <span class="dot"></span>
+        <span id="backend-status">backend verbinden...</span>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- Linkerkolom -->
+      <section class="col">
+        <div id="dropzone" class="dropzone">
+          <input id="file-input" type="file" hidden>
+          <div class="dropzone-icon">⬆</div>
+          <p>Sleep een bestand hierheen<br>of klik om te selecteren</p>
+          <span class="hint">wordt verstuurd naar de lokale backend op poort 5777</span>
+        </div>
+
+        <div class="card gauge-card">
+          <div id="gauge-empty" class="gauge-empty">
+            <div class="gauge-empty-icon">◎</div>
+            <span>wacht op bestand...</span>
+          </div>
+          <div id="gauge-result" class="gauge-result hidden">
+            <svg viewBox="0 0 120 120" class="gauge-svg">
+              <circle cx="60" cy="60" r="54" class="gauge-track"></circle>
+              <circle id="gauge-fill" cx="60" cy="60" r="54" class="gauge-fill"></circle>
+            </svg>
+            <div class="gauge-center">
+              <span id="gauge-score">0</span>
+              <small>RISK SCORE</small>
+            </div>
+            <div id="verdict-badge" class="verdict-badge"></div>
+          </div>
+        </div>
+
+        <div id="error-box" class="error-box hidden"></div>
+
+        <div class="card" id="forensic-card">
+          <h2 class="card-title">🧾 Forensisch rapport</h2>
+          <div class="forensic-inputs">
+            <label class="forensic-label">Analist (optioneel)
+              <input id="analyst-input" type="text" class="forensic-field" placeholder="bijv. J. Jansen">
+            </label>
+            <label class="forensic-label">Case-ID (optioneel)
+              <input id="caseid-input" type="text" class="forensic-field" placeholder="wordt anders automatisch gegenereerd">
+            </label>
+          </div>
+          <button id="forensic-btn" class="forensic-btn" disabled>Genereer incident-rapport</button>
+          <p class="hint" style="margin-top:8px;">scan eerst een bestand hierboven</p>
+          <div id="forensic-result" class="forensic-result hidden">
+            <div class="forensic-result-row">
+              <span class="stat-label">Case-ID</span>
+              <span id="forensic-case-id" class="mono"></span>
+            </div>
+            <div class="forensic-actions">
+              <a id="forensic-view-html" href="#" target="_blank" class="forensic-action-btn">Bekijk HTML-rapport</a>
+              <a id="forensic-download-pdf" href="#" class="forensic-action-btn primary">Download PDF</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Middenkolom -->
+      <section class="col">
+        <div class="card" id="classification-card">
+          <h2 class="card-title">🔍 Classificatie</h2>
+          <div id="classification-empty" class="empty-text">Nog geen scan uitgevoerd.</div>
+          <div id="classification-content" class="hidden">
+            <div id="office-badge" class="office-badge hidden"></div>
+            <div id="classification-list" class="classification-list"></div>
+            <div id="packing-note" class="packing-note hidden"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">📋 Analyseresultaat</h2>
+          <div id="result-empty" class="empty-text">Nog geen scan uitgevoerd.</div>
+          <div id="result-content" class="hidden">
+            <div class="stat-grid">
+              <div class="stat"><span class="stat-label">Bestand</span><span id="stat-filename" class="stat-value"></span></div>
+              <div class="stat"><span class="stat-label">Grootte</span><span id="stat-size" class="stat-value mono"></span></div>
+              <div class="stat"><span class="stat-label">Entropie</span><span id="stat-entropy" class="stat-value mono"></span></div>
+              <div class="stat"><span class="stat-label">Patronen</span><span id="stat-patterns" class="stat-value mono"></span></div>
+            </div>
+            <div class="stat stat-full"><span class="stat-label">SHA-256</span><span id="stat-hash" class="stat-value mono"></span></div>
+            <div class="reasons">
+              <span class="stat-label">Redenen</span>
+              <ul id="reasons-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">🖥 Scanhistorie</h2>
+          <div id="history-empty" class="empty-text">Nog geen historie.</div>
+          <div id="history-list" class="history-list"></div>
+        </div>
+      </section>
+
+      <!-- Rechterkolom: terminal log -->
+      <section class="col">
+        <div class="card log-card">
+          <h2 class="card-title">▶ Scan log</h2>
+          <div id="log-output" class="log-output">
+            <p class="log-placeholder">$ wacht op input...</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <strong>Over deze tool:</strong>
+      Dit dashboard stuurt het bestand naar de lokale Python-backend (poort 5777), die hash-matching, entropie-analyse, patroonherkenning en PE-header-inspectie uitvoert. Dit zijn erkende heuristische technieken, maar geen enkele scanner kan onbekende zero-day exploits met zekerheid detecteren. Een lage score betekent niet dat een bestand veilig is. Gebruik dit naast, niet in plaats van, professionele EDR/antivirus-software.
+    </footer>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>

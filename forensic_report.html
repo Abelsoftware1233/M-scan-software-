@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Forensisch Rapport — {{ case_id }}</title>
+<style>
+  @page { size: A4; margin: 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: #1a1a1a;
+    font-size: 10.5pt;
+    line-height: 1.5;
+  }
+  .mono { font-family: 'Courier New', monospace; font-size: 9pt; word-break: break-all; }
+
+  .cover {
+    border-bottom: 3px solid #1a1a1a;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  .cover .doc-type {
+    font-size: 9pt;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #666;
+    margin-bottom: 6px;
+  }
+  .cover h1 {
+    font-size: 20pt;
+    margin: 0 0 8px 0;
+  }
+  .cover .case-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9.5pt;
+    color: #444;
+    margin-top: 12px;
+  }
+  .cover .case-meta div { flex: 1; }
+  .cover .case-meta strong { display: block; color: #1a1a1a; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+
+  .verdict-banner {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0 24px 0;
+    font-weight: bold;
+    font-size: 12pt;
+    border: 2px solid;
+  }
+  .verdict-banner.malicious { background: #fdecec; border-color: #c0392b; color: #922b21; }
+  .verdict-banner.suspicious { background: #fef6e7; border-color: #d68910; color: #9c640c; }
+  .verdict-banner.clean { background: #eafaf1; border-color: #229954; color: #196f3d; }
+
+  h2.section-title {
+    font-size: 13pt;
+    border-bottom: 1.5px solid #1a1a1a;
+    padding-bottom: 4px;
+    margin-top: 28px;
+    margin-bottom: 12px;
+  }
+  h3.subsection-title {
+    font-size: 11pt;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    color: #333;
+  }
+
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9.5pt; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #ddd; vertical-align: top; }
+  th { background: #f4f4f4; font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.03em; color: #555; }
+  tr:nth-child(even) { background: #fafafa; }
+
+  .fact-box {
+    background: #f8f8f8;
+    border-left: 3px solid #1a1a1a;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 9.5pt;
+  }
+  .interpretation-box {
+    background: #fdf8f0;
+    border-left: 3px solid #d68910;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 9.5pt;
+  }
+  .interpretation-label {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #9c640c;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 8.5pt; font-family: monospace; margin-right: 4px; }
+  .badge.high { background: #fdecec; color: #922b21; }
+  .badge.med { background: #fef6e7; color: #9c640c; }
+  .badge.low { background: #eafaf1; color: #196f3d; }
+
+  .coc-log { font-size: 8.5pt; font-family: monospace; }
+  .coc-log tr td:first-child { white-space: nowrap; color: #666; }
+
+  .footer-note {
+    margin-top: 32px;
+    padding-top: 12px;
+    border-top: 1px solid #ccc;
+    font-size: 8pt;
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .no-findings { color: #196f3d; font-style: italic; }
+
+  ul.ioc-list { margin: 4px 0; padding-left: 18px; }
+  ul.ioc-list li { font-family: monospace; font-size: 9pt; margin-bottom: 2px; }
+
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+  <div class="cover">
+    <div class="doc-type">Incident Response — Forensisch Analyserapport</div>
+    <h1>Statische Bestandsanalyse</h1>
+    <div class="case-meta">
+      <div><strong>Case ID</strong>{{ case_id }}</div>
+      <div><strong>Analist</strong>{{ analyst }}</div>
+      <div><strong>Rapportdatum</strong>{{ report_date }}</div>
+      <div><strong>Bestand</strong>{{ filename }}</div>
+    </div>
+  </div>
+
+  <div class="verdict-banner {{ verdict }}">
+    Heuristische risico-inschatting: {{ verdict_label }} — score {{ risk_score }}/100
+  </div>
+
+  <h2 class="section-title">1. Samenvatting</h2>
+  <div class="fact-box">
+    Bestand <strong>{{ filename }}</strong> ({{ size_bytes }} bytes) is op {{ scanned_at }} (UTC)
+    statisch geanalyseerd. Er werden {{ pattern_count }} verdachte patronen gedetecteerd
+    over {{ category_count }} categorieën.
+    {% if classifications %}
+    Op basis van de gevonden combinatie van kenmerken is de meest waarschijnlijke
+    classificatie: <strong>{{ classifications[0].type }}</strong>.
+    {% else %}
+    Er is geen specifiek malware-type geclassificeerd op basis van de huidige regelset.
+    {% endif %}
+  </div>
+
+  <h2 class="section-title">2. Identificatie van het bewijsmateriaal</h2>
+  <table>
+    <tr><th>Kenmerk</th><th>Waarde</th></tr>
+    <tr><td>Bestandsnaam</td><td class="mono">{{ filename }}</td></tr>
+    <tr><td>Bestandsgrootte</td><td>{{ size_bytes }} bytes</td></tr>
+    <tr><td>SHA-256</td><td class="mono">{{ sha256 }}</td></tr>
+    <tr><td>SHA-1</td><td class="mono">{{ sha1 }}</td></tr>
+    <tr><td>MD5</td><td class="mono">{{ md5 }}</td></tr>
+    <tr><td>Bestandstype (herkend)</td><td>{{ file_type_note }}</td></tr>
+  </table>
+  <div class="fact-box">
+    Deze hashes vormen de integriteitsreferentie van het bewijsmateriaal. Elke
+    vervolganalyse op een kopie van dit bestand moet dezelfde SHA-256 opleveren
+    — zo niet, dan is het bewijs gewijzigd en niet meer bruikbaar in dit dossier.
+  </div>
+
+  {% if known_hash_match %}
+  <h3 class="subsection-title">2.1 Bekende-malware-database</h3>
+  <div class="fact-box">
+    <strong>TREFFER:</strong> deze SHA-256 komt overeen met een bekende registratie:
+    "{{ known_hash_match.name }}" (familie: {{ known_hash_match.family }}).
+  </div>
+  {% endif %}
+
+  <h2 class="section-title">3. Chain of Custody</h2>
+  <table class="coc-log">
+    <tr><th>Tijdstip (UTC)</th><th>Actie</th><th>Details</th></tr>
+    {% for entry in coc_entries %}
+    <tr>
+      <td>{{ entry.timestamp }}</td>
+      <td>{{ entry.action }}</td>
+      <td>{{ entry.detail }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <h2 class="section-title">4. Tijdlijn</h2>
+  {% if timeline %}
+  <table>
+    <tr><th>Tijdstip</th><th>Gebeurtenis</th></tr>
+    {% for event in timeline %}
+    <tr><td class="mono">{{ event.timestamp }}</td><td>{{ event.event }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="no-findings">Geen bruikbare timestamp-metadata gevonden in het bestand.</p>
+  {% endif %}
+
+  {% if pe_timestamp %}
+  <div class="interpretation-box">
+    <span class="interpretation-label">Interpretatie</span>
+    {{ pe_timestamp.note }}
+  </div>
+  {% endif %}
+
+  <h2 class="section-title">5. Structurele analyse (PE-header)</h2>
+  {% if pe_info %}
+  <table>
+    <tr><th>Kenmerk</th><th>Waarde</th></tr>
+    <tr><td>Geldige PE-executable</td><td>Ja</td></tr>
+    <tr><td>Aantal sections</td><td>{{ pe_info.num_sections }}</td></tr>
+    <tr><td>Section-namen</td><td class="mono">{{ pe_info.section_names | join(', ') }}</td></tr>
+  </table>
+
+  {% if section_entropy %}
+  <h3 class="subsection-title">5.1 Entropie per section</h3>
+  <table>
+    <tr><th>Section</th><th>Grootte (bytes)</th><th>Entropie (0-8)</th><th>Indicatie</th></tr>
+    {% for s in section_entropy %}
+    <tr>
+      <td class="mono">{{ s.name }}</td>
+      <td>{{ s.size_bytes }}</td>
+      <td>{{ s.entropy }}</td>
+      <td>{{ s.flag }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <div class="interpretation-box">
+    <span class="interpretation-label">Interpretatie</span>
+    Een sectie met opvallend hogere entropie dan de rest van het bestand kan wijzen
+    op een ingebedde gepakte of versleutelde payload. Dit is een indicator die
+    verder onderzoek rechtvaardigt, geen bevestiging op zichzelf.
+  </div>
+  {% endif %}
+
+  <h3 class="subsection-title">5.2 Digitale handtekening</h3>
+  <div class="fact-box">{{ signature_info.note }}</div>
+  {% else %}
+  <p class="no-findings">Geen PE-executable-structuur herkend (niet van toepassing op dit bestandstype).</p>
+  {% endif %}
+
+  {% if office_document %}
+  <h2 class="section-title">6. Office-documentanalyse</h2>
+  <table>
+    <tr><th>Kenmerk</th><th>Waarde</th></tr>
+    <tr><td>Documentformaat</td><td>{{ office_document.format }}</td></tr>
+    <tr><td>Bevat VBA-project</td><td>{{ 'Ja' if office_document.contains_vba_project else 'Nee' }}</td></tr>
+  </table>
+  {% endif %}
+
+  <h2 class="section-title">7. Patroondetectie (feitelijke bevindingen)</h2>
+  {% if pattern_findings %}
+  <table>
+    <tr><th>Regel</th><th>Categorie</th><th>Aantal treffers</th><th>Gewicht</th></tr>
+    {% for f in pattern_findings %}
+    <tr>
+      <td class="mono">{{ f.rule }}</td>
+      <td><span class="badge {{ 'high' if f.weight >= 25 else ('med' if f.weight >= 15 else 'low') }}">{{ f.category }}</span></td>
+      <td>{{ f.match_count }}</td>
+      <td>{{ f.weight }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="no-findings">Geen van de {{ total_rules }} gedefinieerde patronen kwam voor in dit bestand.</p>
+  {% endif %}
+
+  <h2 class="section-title">8. Geëxtraheerde strings &amp; indicatoren (IOC's)</h2>
+  <p>In totaal {{ strings_info.total_extracted }} leesbare strings geëxtraheerd (≥6 tekens).
+  {% if strings_info.truncated %}Onderstaande lijst toont een steekproef van de eerste {{ strings_info.sample | length }}.{% endif %}</p>
+
+  {% for label, key in [('URL\'s', 'urls'), ('IP-adressen', 'ips'), ('Bestandspaden', 'file_paths'), ('E-mailadressen', 'email_addresses'), ('Registry-sleutels', 'registry_keys')] %}
+    {% set values = strings_info.indicators_of_compromise[key] %}
+    {% if values %}
+    <h3 class="subsection-title">{{ label }} ({{ values | length }})</h3>
+    <ul class="ioc-list">
+      {% for v in values %}<li>{{ v }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  {% endfor %}
+
+  <h2 class="section-title page-break">9. Classificatie (interpretatie)</h2>
+  <div class="interpretation-box">
+    <span class="interpretation-label">Let op — dit is interpretatie, geen feit</span>
+    Onderstaande classificatie is een heuristische inschatking op basis van welke
+    patroon-categorieën samen voorkomen. Dit is GEEN bevestigde malware-familie-
+    identificatie; die vereist reverse engineering (bijv. disassembly in Ghidra/IDA)
+    of gedragsanalyse in een sandbox.
+  </div>
+
+  {% if classifications %}
+  {% for c in classifications %}
+  <h3 class="subsection-title">{{ loop.index }}. {{ c.type }}</h3>
+  <p>{{ c.description }}</p>
+  <p><em>Gebaseerd op gevonden categorieën: {{ c.matched_categories | join(', ') }}</em></p>
+  {% endfor %}
+  {% else %}
+  <p class="no-findings">Geen classificatie van toepassing.</p>
+  {% endif %}
+
+  <h2 class="section-title">10. Aanbevolen vervolgstappen</h2>
+  <ul>
+    <li>Bewaar het originele bestand read-only en gebruik uitsluitend kopieën voor verder onderzoek.</li>
+    <li>Vergelijk de gevonden hashes met threat-intelligence-platforms (VirusTotal, MalwareBazaar) voor aanvullende context.</li>
+    {% if classifications %}<li>Overweeg dynamische analyse (sandbox: Any.run, Hybrid Analysis) om het vermoede gedrag te bevestigen.</li>{% endif %}
+    {% if strings_info.indicators_of_compromise.ips or strings_info.indicators_of_compromise.urls %}<li>Blokkeer/monitor de gevonden IP-adressen en URL's in netwerkdefensie (firewall/proxy).</li>{% endif %}
+    <li>Documenteer alle vervolgacties in dit chain-of-custody-log.</li>
+  </ul>
+
+  <div class="footer-note">
+    Dit rapport is automatisch gegenereerd door MalScan op basis van statische
+    (niet-uitvoerende) analyse. Het vervangt geen professionele forensische
+    dienstverlening, reverse engineering, of juridisch advies. Alle
+    classificaties in sectie 9 zijn heuristisch en dienen als aanknopingspunt
+    voor verder onderzoek, niet als eindconclusie.
+    <br>Gegenereerd: {{ report_date }} · Rapport-ID: {{ case_id }}
+  </div>
+
+</body>
+</html>
