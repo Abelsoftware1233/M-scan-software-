@@ -1,9 +1,0 @@
-flask==3.0.3
-flask-cors==4.0.1
-requests==2.32.3
-
-# LET OP: PDF-export vereist daarnaast het systeempakket 'wkhtmltopdf'
-# (geen pip-package). Installeer met:
-#   Ubuntu/Debian: sudo apt install wkhtmltopdf
-#   macOS:         brew install --cask wkhtmltopdf
-#   Windows:       installer van https://wkhtmltopdf.org/downloads.html
