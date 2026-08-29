@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Eventuele lokale testbestanden / uploads (nooit malware-samples committen!)
+uploads/
+samples/
+*.exe
+*.dll
+*.vbs
+*.ps1
+!examples/*.txt
+
+# Gegenereerde rapporten
+*.pdf
+!docs/*.pdf
